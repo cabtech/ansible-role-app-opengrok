@@ -1,0 +1,96 @@
+---
+
+- name: 'install package dependencies'
+  apt:
+    pkg: ['default-jdk', 'exuberant-ctags', 'tomcat8']
+    state: present
+  become: true
+  tags:
+  - opengrok
+  - opengrok-pkg
+
+- name: 'create installation dir'
+  file:
+    name: /opt
+    state: directory
+  become: true
+  tags:
+  - opengrok
+
+- name: 'copy and expand opengrok zip file'
+  unarchive:
+    src: opengrok-{{opengrok_version}}.tar.gz
+    dest: /opt
+    copy: true
+  become: true
+  tags:
+  - opengrok
+
+- name: 'symlink to active version'
+  file:
+    src: /opt/opengrok-{{opengrok_version}}
+    dest: /opt/opengrok
+    state: link
+  become: true
+  tags:
+  - opengrok
+
+- name: 'create working dirs under /var'
+  file:
+    name: /var/opengrok/{{item}}
+    state: directory
+    owner: '{{opengrok_owner}}'
+    group: '{{opengrok_group}}'
+    mode: 0755
+  loop: ['', 'data', 'etc', 'src']
+  become: true
+  tags:
+  - opengrok
+
+- name: 'add cron job to run the indexing periodically'
+  cron:
+    user: '{{opengrok_owner}}'
+    name: 'OpenGrokIndexer'
+    minute: '0'
+    hour: '*/2'
+    job: '/opt/opengrok/bin/OpenGrok index'
+  become: true
+  tags:
+  - opengrok
+  - opengrok-cron
+
+- name: 'deploy Opengrok into Tomcat (one-time)'
+  command: /opt/opengrok/bin/OpenGrok deploy
+  args:
+    creates: /var/lib/{{opengrok_service}}/webapps/source.war
+  become: true
+  become_user: '{{opengrok_owner}}'
+  tags:
+  - opengrok
+  - opengrok-tomcat
+
+- name: 'symlink sources to /var/opengrok/src'
+  file:
+    src: '{{item.path}}'
+    state: link
+    dest: /var/opengrok/src/{{item.name}}
+    owner: '{{opengrok_owner}}'
+  loop: '{{opengrok_sources}}'
+  notify: handler_run_opengrok_indexer
+  become: true
+  tags:
+  - opengrok
+  - opengrok-src
+
+- name: 'start tomcat service'
+  service:
+    name: '{{opengrok_service}}'
+    state: started
+    enabled: true
+  become: true
+  become_user: '{{opengrok_owner}}'
+  notify: handler_run_opengrok_indexer
+  tags:
+  - opengrok
+  - opengrok-svc
+...

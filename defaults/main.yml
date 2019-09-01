@@ -1,0 +1,8 @@
+---
+opengrok_group: tomcat8
+opengrok_name: opengrok
+opengrok_owner: tomcat8
+opengrok_service: tomcat8
+opengrok_sources: []
+opengrok_version: 1.1-rc21
+...
