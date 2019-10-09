@@ -6,8 +6,8 @@
     state: present
   become: true
   tags:
-  - opengrok
-  - opengrok-pkg
+  - ct-opengrok
+  - ct-opengrok-pkg
 
 - name: 'create installation dir'
   file:
@@ -15,7 +15,7 @@
     state: directory
   become: true
   tags:
-  - opengrok
+  - ct-opengrok
 
 - name: 'copy and expand opengrok zip file'
   unarchive:
@@ -24,7 +24,7 @@
     copy: true
   become: true
   tags:
-  - opengrok
+  - ct-opengrok
 
 - name: 'symlink to active version'
   file:
@@ -33,7 +33,7 @@
     state: link
   become: true
   tags:
-  - opengrok
+  - ct-opengrok
 
 - name: 'create working dirs under /var'
   file:
@@ -45,7 +45,7 @@
   loop: ['', 'data', 'etc', 'src']
   become: true
   tags:
-  - opengrok
+  - ct-opengrok
 
 - name: 'add cron job to run the indexing periodically'
   cron:
@@ -56,8 +56,8 @@
     job: '/opt/opengrok/bin/OpenGrok index'
   become: true
   tags:
-  - opengrok
-  - opengrok-cron
+  - ct-opengrok
+  - ct-opengrok-cron
 
 - name: 'deploy Opengrok into Tomcat (one-time)'
   command: /opt/opengrok/bin/OpenGrok deploy
@@ -66,8 +66,8 @@
   become: true
   become_user: '{{opengrok_owner}}'
   tags:
-  - opengrok
-  - opengrok-tomcat
+  - ct-opengrok
+  - ct-opengrok-tomcat
 
 - name: 'symlink sources to /var/opengrok/src'
   file:
@@ -79,8 +79,8 @@
   notify: handler_run_opengrok_indexer
   become: true
   tags:
-  - opengrok
-  - opengrok-src
+  - ct-opengrok
+  - ct-opengrok-src
 
 - name: 'start tomcat service'
   service:
@@ -91,6 +91,6 @@
   become_user: '{{opengrok_owner}}'
   notify: handler_run_opengrok_indexer
   tags:
-  - opengrok
-  - opengrok-svc
+  - ct-opengrok
+  - ct-opengrok-svc
 ...
