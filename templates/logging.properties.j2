@@ -1,0 +1,14 @@
+# MANAGED_BY_ANSIBLE
+handlers= java.util.logging.FileHandler, java.util.logging.ConsoleHandler
+
+java.util.logging.FileHandler.pattern = {{opengrok_var_dir}}/log/opengrok%g.%u.log
+java.util.logging.FileHandler.append = false
+java.util.logging.FileHandler.limit = 0
+java.util.logging.FileHandler.count = 30
+java.util.logging.FileHandler.level = ALL
+java.util.logging.FileHandler.formatter = org.opengrok.indexer.logger.formatter.SimpleFileLogFormatter
+
+java.util.logging.ConsoleHandler.level = WARNING
+java.util.logging.ConsoleHandler.formatter = org.opengrok.indexer.logger.formatter.SimpleFileLogFormatter
+
+org.opengrok.level = FINE

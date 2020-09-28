@@ -1,0 +1,16 @@
+#!/bin/bash
+# MANAGED_BY_ANSIBLE
+cd {{opengrok_var_dir}}/src
+
+{% for repo in opengrok_public_repos %}
+git clone https://github.com/{{repo}}.git
+{% endfor %}
+{% if opengrok_github_token is defined %}
+
+{% for repo in opengrok_private_repos %}
+git clone https://{{opengrok_github_token}}@github.com/{{repo}}.git
+{% endfor %}
+/bin/rm -f {{template_destpath}}
+{% endif %}
+
+exit 0

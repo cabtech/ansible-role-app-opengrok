@@ -2,50 +2,111 @@
 
 - name: 'install package dependencies'
   apt:
-    pkg: ['default-jdk', 'exuberant-ctags', 'tomcat8']
+    pkg: '{{opengrok_pkg_dependencies}}'
     state: present
   become: true
-  tags:
-  - ct-opengrok
-  - ct-opengrok-pkg
+  tags: ['ct-opengrok']
 
-- name: 'create installation dir'
+- name: 'install snap dependencies'
+  snap:
+    name: '{{opengrok_snap_dependencies}}'
+    state: present
+  become: true
+  tags: ['ct-opengrok']
+
+- name: 'create Opengrok var dirs'
   file:
-    name: /opt
+    group: '{{item.group}}'
+    mode: '{{item.mode}}'
+    name: '{{opengrok_var_dir}}/{{item.path}}'
+    owner: '{{item.owner}}'
+    state: directory
+  loop: '{{opengrok_sub_dirs}}'
+  become: true
+  tags: ['ct-opengrok']
+
+- name: 'create Opengrok opt dir'
+  file:
+    mode: '0755'
+    name: '{{opengrok_opt_dir}}'
     state: directory
   become: true
-  tags:
-  - ct-opengrok
 
-- name: 'copy and expand opengrok zip file'
-  unarchive:
-    src: opengrok-{{opengrok_version}}.tar.gz
-    dest: /opt
-    copy: true
+- name: 'create downloads dir'
+  file:
+    mode: '0755'
+    name: '{{opengrok_staging_dir}}'
+    state: directory
   become: true
-  tags:
-  - ct-opengrok
+  tags: ['ct-opengrok']
 
-- name: 'symlink to active version'
+- name: 'download Opengrok archive'
+  get_url:
+    url: '{{opengrok_download_url}}/{{opengrok_version}}/opengrok-{{opengrok_version}}.tar.gz'
+    dest: '{{opengrok_staging_dir}}'
+    timeout: '{{opengrok_internet_timeout}}'
+    validate_certs: false
+  become: true
+  tags: ['ct-opengrok']
+
+- name: 'expand Opengrok archive (ie:cm)'
+  unarchive:
+    dest: /opt
+    copy: false
+    src: '{{opengrok_staging_dir}}/opengrok-{{opengrok_version}}.tar.gz'
+  ignore_errors: '{{ansible_check_mode}}'
+  become: true
+  tags: ['ct-opengrok']
+
+- name: 'symlink to active version (ie:cm)'
   file:
     src: /opt/opengrok-{{opengrok_version}}
     dest: /opt/opengrok
     state: link
+  ignore_errors: '{{ansible_check_mode}}'
   become: true
-  tags:
-  - ct-opengrok
+  tags: ['ct-opengrok']
 
-- name: 'create working dirs under /var'
-  file:
-    name: /var/opengrok/{{item}}
-    state: directory
+- name: 'logging properties'
+  template:
+    dest: '{{opengrok_var_dir}}/etc/logging.properties'
+    group: '{{opengrok_group}}'
+    mode: '0644'
     owner: '{{opengrok_owner}}'
+    src: logging.properties.j2
+  become: true
+  tags: ['ct-opengrok']
+
+- name: 'create links to /var'
+  file:
+    dest: /opt/opengrok/{{item}}
+    src: /var/opengrok/{{item}}
+    state: link
+  loop: ['data', 'etc', 'log', 'src']
+  become: true
+  tags: ['ct-opengrok']
+
+- name: 'create script to clone Github repos'
+  template:
+    dest: /usr/local/bin/clone-repos-for-opengrok.sh
     group: '{{opengrok_group}}'
     mode: 0755
-  loop: ['', 'data', 'etc', 'src']
+    owner: '{{opengrok_owner}}'
+    src: clone-repos-for-opengrok.sh.j2
+  notify: handler_clone_repos_for_opengrok
   become: true
-  tags:
-  - ct-opengrok
+  tags: ['ct-opengrok']
+
+- name: 'create Opengrok indexing script'
+  template:
+    dest: /usr/local/bin/run-opengrok-indexer.sh
+    group: '{{opengrok_group}}'
+    mode: 0755
+    owner: '{{opengrok_owner}}'
+    src: run-opengrok-indexer.sh.j2
+  notify: handler_run_opengrok_indexer
+  become: true
+  tags: ['ct-opengrok']
 
 - name: 'add cron job to run the indexing periodically'
   cron:
@@ -53,21 +114,18 @@
     name: 'OpenGrokIndexer'
     minute: '0'
     hour: '*/2'
-    job: '/opt/opengrok/bin/OpenGrok index'
+    job: '/usr/local/bin/run-opengrok-indexer.sh'
   become: true
-  tags:
-  - ct-opengrok
-  - ct-opengrok-cron
+  tags: ['ct-opengrok']
 
-- name: 'deploy Opengrok into Tomcat (one-time)'
-  command: /opt/opengrok/bin/OpenGrok deploy
+- name: 'deploy Opengrok into Tomcat (once, ie:cm)'
+  command: /bin/cp {{opengrok_opt_dir}}/lib/source.war /var/lib/{{opengrok_svc_name}}/webapps
   args:
-    creates: /var/lib/{{opengrok_service}}/webapps/source.war
+    creates: /var/lib/{{opengrok_svc_name}}/webapps/source.war
+  ignore_errors: '{{ansible_check_mode}}'
   become: true
   become_user: '{{opengrok_owner}}'
-  tags:
-  - ct-opengrok
-  - ct-opengrok-tomcat
+  tags: ['ct-opengrok']
 
 - name: 'symlink sources to /var/opengrok/src'
   file:
@@ -76,21 +134,16 @@
     dest: /var/opengrok/src/{{item.name}}
     owner: '{{opengrok_owner}}'
   loop: '{{opengrok_sources}}'
-  notify: handler_run_opengrok_indexer
+  when: false
   become: true
-  tags:
-  - ct-opengrok
-  - ct-opengrok-src
+  tags: ['ct-opengrok']
 
-- name: 'start tomcat service'
+- name: 'Tomcat service'
   service:
-    name: '{{opengrok_service}}'
-    state: started
-    enabled: true
+    name: '{{opengrok_svc_name}}'
+    state: '{{opengrok_svc_state}}'
+    enabled: '{{opengrok_svc_enabled | bool}}'
   become: true
   become_user: '{{opengrok_owner}}'
-  notify: handler_run_opengrok_indexer
-  tags:
-  - ct-opengrok
-  - ct-opengrok-svc
+  tags: ['ct-opengrok']
 ...

@@ -1,10 +1,14 @@
 ---
-
-- name: 'handler_run_opengrok_indexer'
-  command: /opt/opengrok/bin/OpenGrok index
+- name: 'handler_clone_repos_for_opengrok'
+  command: /usr/local/bin/clone-repos-for-opengrok.sh
+  notify: handler_run_opengrok_indexer
   become: true
   become_user: '{{opengrok_owner}}'
-  tags:
-  - opengrok
-  - opengrok-source
+  tags: ['ct-opengrok']
+#
+- name: 'handler_run_opengrok_indexer'
+  command: /usr/local/bin/run-opengrok-indexer.sh
+  become: true
+  become_user: '{{opengrok_owner}}'
+  tags: ['ct-opengrok']
 ...

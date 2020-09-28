@@ -1,8 +1,26 @@
 ---
+opengrok_addr: localhost
+opengrok_download_url: 'https://github.com/oracle/opengrok/releases/download'
 opengrok_group: tomcat8
-opengrok_name: opengrok
+opengrok_internet_timeout: 30
 opengrok_owner: tomcat8
-opengrok_service: tomcat8
+opengrok_pkg_dependencies: ['git', 'libjansson4', 'tomcat8']
+opengrok_opt_dir: /opt/opengrok
+opengrok_port: 8080
+opengrok_private_repos: []
+opengrok_public_repos: []
+opengrok_snap_dependencies: ['universal-ctags']
 opengrok_sources: []
-opengrok_version: 1.1-rc21
+opengrok_staging_dir: /var/downloads
+opengrok_sub_dirs:
+- {path: '', group: root, mode: '0755', owner: root}
+- {path: 'data', group: '{{opengrok_group}}', mode: '0755', owner: '{{opengrok_owner}}'}
+- {path: 'etc', group: '{{opengrok_group}}', mode: '0755', owner: '{{opengrok_owner}}'}
+- {path: 'log', group: '{{opengrok_group}}', mode: '0755', owner: '{{opengrok_owner}}'}
+- {path: 'src', group: '{{opengrok_group}}', mode: '0755', owner: '{{opengrok_owner}}'}
+opengrok_svc_enabled: true
+opengrok_svc_name: tomcat8
+opengrok_svc_state: started
+opengrok_var_dir: /var/opengrok
+opengrok_version: 1.4.5
 ...

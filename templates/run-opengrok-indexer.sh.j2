@@ -1,0 +1,17 @@
+#!/bin/bash
+
+cd {{opengrok_var_dir}}/src
+for dirname in *; do
+	cd {{opengrok_var_dir}}/src/$dirname
+	git pull
+done
+
+java \
+    -Djava.util.logging.config.file={{opengrok_var_dir}}/etc/logging.properties \
+    -jar {{opengrok_opt_dir}}/lib/opengrok.jar \
+    -c /snap/universal-ctags/current/bin/ctags \
+    -s {{opengrok_var_dir}}/src \
+    -d {{opengrok_var_dir}}/data -H -P -S -G \
+    -W {{opengrok_var_dir}}/etc/configuration.xml \
+    -U http://{{opengrok_addr}}:{{opengrok_port}}/source
+exit 0
