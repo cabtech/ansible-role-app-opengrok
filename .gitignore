@@ -1,1 +1,5 @@
 # ansible-role-app-opengrok
+.alint
+.ylint
+.ansible/
+src/
