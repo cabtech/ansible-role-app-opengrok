@@ -14,10 +14,10 @@ opengrok_sources: []
 opengrok_staging_dir: /var/downloads
 opengrok_sub_dirs:
 - {path: '', group: root, mode: '0755', owner: root}
-- {path: 'data', group: '{{opengrok_group}}', mode: '0755', owner: '{{opengrok_owner}}'}
-- {path: 'etc', group: '{{opengrok_group}}', mode: '0755', owner: '{{opengrok_owner}}'}
-- {path: 'log', group: '{{opengrok_group}}', mode: '0755', owner: '{{opengrok_owner}}'}
-- {path: 'src', group: '{{opengrok_group}}', mode: '0755', owner: '{{opengrok_owner}}'}
+- {path: 'data', group: '{{ opengrok_group }}', mode: '0755', owner: '{{ opengrok_owner }}'}
+- {path: 'etc', group: '{{ opengrok_group }}', mode: '0755', owner: '{{ opengrok_owner }}'}
+- {path: 'log', group: '{{ opengrok_group }}', mode: '0755', owner: '{{ opengrok_owner }}'}
+- {path: 'src', group: '{{ opengrok_group }}', mode: '0755', owner: '{{ opengrok_owner }}'}
 opengrok_svc_enabled: true
 opengrok_svc_name: tomcat8
 opengrok_svc_state: started

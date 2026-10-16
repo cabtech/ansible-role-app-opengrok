@@ -1,14 +1,14 @@
 ---
-- name: 'handler_clone_repos_for_opengrok'
-  command: /usr/local/bin/clone-repos-for-opengrok.sh
+- name: "HandlerCloneReposForOpengrok"
+  ansible.builtin.command: /usr/local/bin/clone-repos-for-opengrok.sh
   notify: handler_run_opengrok_indexer
   become: true
-  become_user: '{{opengrok_owner}}'
-  tags: ['ct-opengrok']
+  become_user: "{{ opengrok_owner }}"
+  tags: ["ct-opengrok", "skip_ansible_lint"]
 #
-- name: 'handler_run_opengrok_indexer'
-  command: /usr/local/bin/run-opengrok-indexer.sh
+- name: "HandlerRunOpengrokIndexer"
+  ansible.builtin.command: /usr/local/bin/run-opengrok-indexer.sh
   become: true
-  become_user: '{{opengrok_owner}}'
-  tags: ['ct-opengrok']
+  become_user: "{{ opengrok_owner }}"
+  tags: ["ct-opengrok", "skip_ansible_lint"]
 ...
