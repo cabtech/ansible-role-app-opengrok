@@ -1,18 +1,35 @@
 ---
 
+- name: "Include variables wrapper"
+  ansible.builtin.include_tasks:
+    file: variables.yml
+  tags: ["ct-opengrok"]
+
+- name: "Disto/Family tasks (FF)"
+  ansible.builtin.include_tasks:
+    file: "{{ lookup('ansible.builtin.first_found', params) }}"
+  vars:
+    params:
+      files:
+      - "{{ ansible_facts['distribution'] }}-{{ ansible_facts['distribution_major_version'].split('.')[0] }}.yml"
+      - "{{ ansible_facts['distribution'] }}.yml"
+      - "{{ ansible_facts['os_family'] }}.yml"
+      - "default.yml"
+  tags: ["ct-opengrok"]
+
 - name: 'Install package dependencies'
   ansible.builtin.apt:
     pkg: '{{ opengrok_pkg_dependencies }}'
     state: present
   become: true
-  tags: ['ct-opengrok']
+  tags: ["ct-opengrok"]
 
 - name: 'Install snap dependencies'
   community.general.snap:
     name: '{{ opengrok_snap_dependencies }}'
     state: present
   become: true
-  tags: ['ct-opengrok']
+  tags: ["ct-opengrok"]
 
 - name: 'Create Opengrok var dirs'
   ansible.builtin.file:
@@ -23,7 +40,7 @@
     state: directory
   loop: '{{ opengrok_sub_dirs }}'
   become: true
-  tags: ['ct-opengrok']
+  tags: ["ct-opengrok"]
 
 - name: 'Create Opengrok opt dir'
   ansible.builtin.file:
@@ -31,6 +48,7 @@
     name: '{{ opengrok_opt_dir }}'
     state: directory
   become: true
+  tags: ["ct-opengrok"]
 
 - name: 'Create downloads dir'
   ansible.builtin.file:
@@ -38,7 +56,7 @@
     name: '{{ opengrok_staging_dir }}'
     state: directory
   become: true
-  tags: ['ct-opengrok']
+  tags: ["ct-opengrok"]
 
 - name: 'Download Opengrok archive'
   ansible.builtin.get_url:
@@ -48,7 +66,7 @@
     url: '{{ opengrok_download_url }}/{{ opengrok_version }}/opengrok-{{ opengrok_version }}.tar.gz'
     validate_certs: false
   become: true
-  tags: ['ct-opengrok']
+  tags: ["ct-opengrok"]
 
 - name: 'Expand Opengrok archive (ie:cm)'
   ansible.builtin.unarchive:
@@ -57,7 +75,7 @@
     src: '{{ opengrok_staging_dir }}/opengrok-{{ opengrok_version }}.tar.gz'
   ignore_errors: '{{ ansible_check_mode }}'
   become: true
-  tags: ['ct-opengrok']
+  tags: ["ct-opengrok"]
 
 - name: 'Symlink to active version (ie:cm)'
   ansible.builtin.file:
@@ -66,7 +84,7 @@
     state: link
   ignore_errors: '{{ ansible_check_mode }}'
   become: true
-  tags: ['ct-opengrok']
+  tags: ["ct-opengrok"]
 
 - name: 'Logging properties'
   ansible.builtin.template:
@@ -76,7 +94,7 @@
     owner: '{{ opengrok_owner }}'
     src: logging.properties.j2
   become: true
-  tags: ['ct-opengrok']
+  tags: ["ct-opengrok"]
 
 - name: 'Create links to /var'
   ansible.builtin.file:
@@ -85,7 +103,7 @@
     state: link
   loop: ['data', 'etc', 'log', 'src']
   become: true
-  tags: ['ct-opengrok']
+  tags: ["ct-opengrok"]
 
 - name: 'Create script to clone Github repos'
   ansible.builtin.template:
@@ -96,7 +114,7 @@
     src: clone-repos-for-opengrok.sh.j2
   notify: HandlerCloneReposForOpengrok
   become: true
-  tags: ['ct-opengrok']
+  tags: ["ct-opengrok"]
 
 - name: 'Create Opengrok indexing script'
   ansible.builtin.template:
@@ -107,7 +125,7 @@
     src: run-opengrok-indexer.sh.j2
   notify: HandlerRunOpengrokIndexer
   become: true
-  tags: ['ct-opengrok']
+  tags: ["ct-opengrok"]
 
 - name: 'Add cron job to run the indexing periodically'
   ansible.builtin.cron:
@@ -117,7 +135,7 @@
     hour: '*/2'
     job: '/usr/local/bin/run-opengrok-indexer.sh'
   become: true
-  tags: ['ct-opengrok']
+  tags: ["ct-opengrok"]
 
 - name: 'Deploy Opengrok into Tomcat (once, ie:cm)'
   ansible.builtin.command: /bin/cp {{ opengrok_opt_dir }}/lib/source.war /var/lib/{{ opengrok_svc_name }}/webapps
@@ -126,7 +144,7 @@
   ignore_errors: '{{ ansible_check_mode }}'
   become: true
   become_user: '{{ opengrok_owner }}'
-  tags: ['ct-opengrok']
+  tags: ["ct-opengrok"]
 
 - name: 'Symlink sources to /var/opengrok/src'
   ansible.builtin.file:
@@ -137,7 +155,7 @@
   loop: '{{ opengrok_sources }}'
   when: false
   become: true
-  tags: ['ct-opengrok']
+  tags: ["ct-opengrok"]
 
 - name: 'Tomcat service'
   ansible.builtin.service:
@@ -146,5 +164,5 @@
     enabled: '{{ opengrok_svc_enabled | bool }}'
   become: true
   become_user: '{{ opengrok_owner }}'
-  tags: ['ct-opengrok']
+  tags: ["ct-opengrok"]
 ...
